@@ -50,8 +50,19 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   console.log(tabId, changeInfo, tab);
   
-  if (tabId === tabDetails?.id && changeInfo?.status === "complete") {
+  if (changeInfo?.status === "complete") {
+    if (tab.url.includes("nget/train-search")) {
+      console.log('Got new tab of irctc')
+      tabDetails = tab;
+      chrome.scripting.executeScript({
+        target: { tabId: tab.id },
+        files: ["./content_script.js"],
+      }, () => {
+        chrome.tabs.sendMessage(tabDetails.id, getMsg("loadLoginDetails"));
+      });
+    }
     if (tab.url.includes("booking/train-list")) {
+      console.log('Select journey started')
       chrome.tabs.sendMessage(tabDetails.id, getMsg("selectJourney"));
     }
     if (tab.url.includes("booking/psgninput")) {

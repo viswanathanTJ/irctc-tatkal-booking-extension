@@ -19,5 +19,5 @@
     "service_worker": "./background_script.js"
   },
   "permissions": ["scripting", "tabs", "storage"],
-  "host_permissions": ["https://www.irctc.co.in/"]
+  "host_permissions": ["https://www.irctc.co.in/*"]
 }

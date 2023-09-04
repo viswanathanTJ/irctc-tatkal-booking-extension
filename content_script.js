@@ -69,15 +69,24 @@ function selectPaytmUPI() {
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   console.log(message, sender, "content_script");
+
   if (message.id !== "irctc") {
     sendResponse("Invalid Id");
     return;
   }
+
   const type = message.msg.type;
-  if (type === "selectJourney") {
+  console.log('Received type =>', type)
+  if (type === "loadLoginDetails") {
+    console.log('Load login started')
+    addDelay(200);
+    continueScript();
+  } else if (type === "selectJourney") {
+    console.log('Select journey started')
     addDelay(200);
     delayAndSelectJourney();
   } else if (type === "fillPassengerDetails") {
+    console.log('Fill passenger details started')
     addDelay(200);
     fillPassengerDetails();
   } else if (type === "focusCaptchaInput") {
@@ -92,6 +101,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
 function loadLoginDetails() {
   statusUpdate("login_started");
+  document.querySelector(
+    "body > app-root > app-home > div.header-fix > app-header > div.col-sm-12.h_container > div.text-center.h_main_div > div.row.col-sm-12.h_head1 > a.search_btn.loginText.ng-star-inserted"
+  ).click()
   const loginModal = document.querySelector("#divMain > app-login");
   const userNameInput = loginModal.querySelector(
     "input[type='text'][formcontrolname='userid']"
@@ -288,6 +300,7 @@ function selectJourney() {
 
 function fillPassengerDetails() {
   statusUpdate("passenger_filling_started");
+  if (!user_data["passenger_details"][0]) return; 
   const parentElement = document.querySelector("app-passenger-input");
   let count = 1;
   while (count < user_data["passenger_details"].length) {
@@ -359,8 +372,10 @@ function fillPassengerDetails() {
   let number_input_field = parentElement.querySelector(
     "input#mobileNumber[formcontrolname='mobileNumber'][name='mobileNumber']"
   );
-  number_input_field.value = user_data["contact_details"].mobileNumber;
-  number_input_field.dispatchEvent(new Event("input"));
+  if(user_data["contact_details"].mobileNumber) {
+    number_input_field.value = user_data["contact_details"].mobileNumber;  
+    number_input_field.dispatchEvent(new Event("input"));
+  }
 
   // Other preferences
   let autoUpgradationInput = parentElement.querySelector(
@@ -511,6 +526,7 @@ function submitPassengerDetailsForm(parentElement) {
 
 function continueScript() {
   statusUpdate("continue_script");
+  if (!user_data.hasOwnProperty('irctc_credentials') || !user_data['irctc_credentials']['user_name'] ) return;
   const loginBtn = document.querySelector(
     "body > app-root > app-home > div.header-fix > app-header > div.col-sm-12.h_container > div.text-center.h_main_div > div.row.col-sm-12.h_head1 > a.search_btn.loginText.ng-star-inserted"
   );
@@ -520,7 +536,7 @@ function continueScript() {
       loadJourneyDetails();
     }
     if (loginBtn.innerText.trim().toUpperCase() === "LOGIN") {
-      loginBtn.click();
+      // loginBtn.click();
       loadLoginDetails();
     }
   } else if (window.location.href.includes("nget/booking/train-list")) {
@@ -530,15 +546,7 @@ function continueScript() {
   }
 }
 
-window.onload = function (e) {
-  // wait for time
-  // const timerDiv =
-  //   document.querySelector(
-  //     "body > app-root > app-home > div.header-fix > app-header > div.col-sm-12.h_container > div.text-center.h_main_div > div.row.col-sm-12.h_head1 > span > strong"
-  //   ) ??
-  //   document.querySelector(
-  //     "#slide-menu > p-sidebar > div > nav > div > label"
-  //   );
+function scriptStarter() {
   const loginBtn = document.querySelector(
     "body > app-root > app-home > div.header-fix > app-header > div.col-sm-12.h_container > div.text-center.h_main_div > div.row.col-sm-12.h_head1 "
   );
@@ -559,7 +567,7 @@ window.onload = function (e) {
       loadJourneyDetails();
     } else {
       console.log('clicking login')
-      loginBtn.click();
+      // loginBtn.click();
       loadLoginDetails();
     }
   };
@@ -571,4 +579,19 @@ window.onload = function (e) {
     user_data = result;
     continueScript();
   });
+}
+
+window.onload = function (e) {
+  // wait for time
+  // const timerDiv =
+  //   document.querySelector(
+  //     "body > app-root > app-home > div.header-fix > app-header > div.col-sm-12.h_container > div.text-center.h_main_div > div.row.col-sm-12.h_head1 > span > strong"
+  //   ) ??
+  //   document.querySelector(
+  //     "#slide-menu > p-sidebar > div > nav > div > label"
+  //   );
+  scriptStarter()
 };
+
+console.log("content script attached");
+scriptStarter()
